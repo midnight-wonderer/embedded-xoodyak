@@ -8,31 +8,26 @@ This library is designed specifically for resource-constrained embedded systems 
 
 ## How to Build / Integrate
 
-To use this library, add `include/` to your header search paths, and compile `src/Xoodyak.c` along with **one** of the Xoodoo implementations, depending on your target platform:
+To use this library, add `include/` to your header search paths.
 
-### 1. Portable C (Generic Fallback)
-Compile the following files:
+### 1. Automatic Selection (Recommended)
+You can simply compile all source files in the `src/` directory:
 * `src/Xoodyak.c`
 * `src/Xoodoo-portable.c`
-
-### 2. Xtensa LX106 (ESP8266 / NodeMCU)
-Compile the following files (using your `xtensa-lx106-elf-*` toolchain):
-* `src/Xoodyak.c`
 * `src/Xoodoo-helpers.c`
 * `src/Xoodoo-lx106.S`
-
-### 3. ARM Cortex-M0 / Cortex-M0+ (ARMv6-M)
-Compile the following files:
-* `src/Xoodyak.c`
-* `src/Xoodoo-helpers.c`
 * `src/Xoodoo-armv6m.S`
-
-### 4. ARM Cortex-M3 / M4 / M7 (ARMv7-M)
-Compile the following files:
-* `src/Xoodyak.c`
-* `src/Xoodoo-helpers.c`
 * `src/Xoodoo-armv7m.S`
 
+The library uses built-in C preprocessor macros to automatically select the most optimized implementation for your target CPU architecture (Xtensa, ARMv6-M, ARMv7-M) and disable the others at compile time.
+
+### 2. Manual Selection
+Alternatively, you can compile `src/Xoodyak.c` along with only the files for your target platform:
+
+* **Portable C (Generic Fallback)**: Compile `src/Xoodyak.c` and `src/Xoodoo-portable.c`.
+* **Xtensa LX106 (ESP8266 / NodeMCU)**: Compile `src/Xoodyak.c`, `src/Xoodoo-helpers.c`, and `src/Xoodoo-lx106.S`.
+* **ARM Cortex-M0 / M0+ (ARMv6-M)**: Compile `src/Xoodyak.c`, `src/Xoodoo-helpers.c`, and `src/Xoodoo-armv6m.S`.
+* **ARM Cortex-M3 / M4 / M7 (ARMv7-M)**: Compile `src/Xoodyak.c`, `src/Xoodoo-helpers.c`, and `src/Xoodoo-armv7m.S`.
 
 ---
 

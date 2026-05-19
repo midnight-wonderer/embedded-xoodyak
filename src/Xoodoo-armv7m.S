@@ -1,3 +1,5 @@
+#if defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7EM__)
+
 @
 @ The eXtended Keccak Code Package (XKCP)
 @ https://github.com/XKCP/XKCP
@@ -200,3 +202,6 @@ Xoodoo_Permute_6rounds:
 Xoodoo_Permute_12rounds:
     movs    r1, #12
     b       Xoodoo_Permute_Nrounds
+
+#endif
+

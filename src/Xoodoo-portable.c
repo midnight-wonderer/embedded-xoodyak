@@ -1,3 +1,7 @@
+#if !defined(__XTENSA__) && !defined(__xtensa__) && \
+    !defined(__ARM_ARCH_6M__) && \
+    !defined(__ARM_ARCH_7M__) && !defined(__ARM_ARCH_7EM__)
+
 #include "Xoodoo.h"
 #include <string.h>
 
@@ -130,3 +134,5 @@ void Xoodoo_Permute_12rounds(Xoodoo_state *state)
 {
     Xoodoo_Permute_Nrounds(state, 12);
 }
+
+#endif

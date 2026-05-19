@@ -1,3 +1,5 @@
+#if defined(__XTENSA__) || defined(__xtensa__)
+
     .text
     .literal_position
     .align  4
@@ -283,3 +285,5 @@ Xoodoo_Permute_6rounds:
 Xoodoo_Permute_12rounds:
     movi    a3, 12
     j       Xoodoo_Permute_Nrounds
+
+#endif

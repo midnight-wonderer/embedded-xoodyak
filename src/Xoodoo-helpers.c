@@ -1,3 +1,7 @@
+#if defined(__XTENSA__) || defined(__xtensa__) || \
+    defined(__ARM_ARCH_6M__) || \
+    defined(__ARM_ARCH_7M__) || defined(__ARM_ARCH_7EM__)
+
 #include "Xoodoo.h"
 #include <string.h>
 
@@ -41,3 +45,5 @@ void Xoodoo_ExtractAndAddBytes(const Xoodoo_state *state, const uint8_t *input, 
         output[i] = input[i] ^ stateBytes[offset + i];
     }
 }
+
+#endif
