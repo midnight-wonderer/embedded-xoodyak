@@ -21,193 +21,182 @@
     .syntax unified
 .text
 
-.equ _r0   , 5
-.equ _r1   , 14
-.equ _t3   , 1
+    .align  4
+.L_RC:
+    .word   0x00000058  # _rc12
+    .word   0x00000038  # _rc11
+    .word   0x000003C0  # _rc10
+    .word   0x000000D0  # _rc9
+    .word   0x00000120  # _rc8
+    .word   0x00000014  # _rc7
+    .word   0x00000060  # _rc6
+    .word   0x0000002C  # _rc5
+    .word   0x00000380  # _rc4
+    .word   0x000000F0  # _rc3
+    .word   0x000001A0  # _rc2
+    .word   0x00000012  # _rc1
+.L_RC_end:
 
-.equ _w1   , 11
+.global Xoodoo_Permute_Nrounds
+.type   Xoodoo_Permute_Nrounds, %function
+Xoodoo_Permute_Nrounds:
+    @ Input: r0 = state pointer, r1 = nrounds
+    push    {r4-r11, lr}     @ Save callee-saved registers
 
-.equ _e0   , 2
-.equ _e1   , 8
+    @ Calculate starting RC pointer: .L_RC + (12 - nrounds) * 4
+    adr     r2, .L_RC
+    movs    r3, #12
+    subs    r1, r3, r1       @ r1 = 12 - nrounds
+    add     r2, r2, r1, lsl #2 @ r2 = RC pointer
 
-.equ _rc12 , 0x00000058
-.equ _rc11 , 0x00000038
-.equ _rc10 , 0x000003C0
-.equ _rc9  , 0x000000D0
-.equ _rc8  , 0x00000120
-.equ _rc7  , 0x00000014
-.equ _rc6  , 0x00000060
-.equ _rc5  , 0x0000002C
-.equ _rc4  , 0x00000380
-.equ _rc3  , 0x000000F0
-.equ _rc2  , 0x000001A0
-.equ _rc1  , 0x00000012
+    @ Push state pointer and RC pointer to stack
+    push    {r0, r2}         @ sp+0 = RC pointer, sp+4 = state pointer
 
-.equ _rc6x1, 0x00000003
-.equ _rc5x2, 0x0b000000
-.equ _rc4x3, 0x07000000
-.equ _rc3x4, 0x000f0000
-.equ _rc2x5, 0x0000d000
-.equ _rc1x6, 0x00000048
+    @ Load state lanes into r0-r11
+    ldm     r0, {r0-r11}
 
-.equ _rc12x1, 0xc0000002
-.equ _rc11x2, 0x0e000000
-.equ _rc10x3, 0x07800000
-.equ _rc9x4 , 0x000d0000
-.equ _rc8x5 , 0x00009000
-.equ _rc7x6 , 0x00000050
-.equ _rc6x7 , 0x0000000c
-.equ _rc5x8 , 0x2c000000
-.equ _rc4x9 , 0x1c000000
-.equ _rc3x10, 0x003c0000
-.equ _rc2x11, 0x00034000
-.equ _rc1x12, 0x00000120
+.L_round_loop:
+    @ -------------------------------------------------------------
+    @ Theta: Column Parity Mixer
+    @ -------------------------------------------------------------
+    eor     r12, r0, r4
+    eor     r12, r12, r8    @ r12 = P0
+    eor     lr, r1, r5
+    eor     lr, lr, r9      @ lr = P1
+    push    {r12, lr}       @ sp+0 = P0, sp+4 = P1 (after register ordering rules: sp+0 = r12, sp+4 = lr)
+    
+    eor     r12, r2, r6
+    eor     r12, r12, r10   @ r12 = P2
+    eor     lr, r3, r7
+    eor     lr, lr, r11     @ lr = P3
+    push    {r12, lr}       @ sp+0 = P2, sp+4 = P3
+    @ Stack layout now:
+    @ sp+0: P2, sp+4: P3, sp+8: P0, sp+12: P1, sp+16: RC ptr, sp+20: state ptr
 
-.macro    mXor3   ro, a0, a1, a2, rho_e1, rho_e2
-    .if ((\rho_e1)%32) == 0
-    eors    \ro, \a0, \a1
-    .else
-    eor     \ro, \a0, \a1, ROR #(32-(\rho_e1))%32
-    .endif
-    .if ((\rho_e2)%32) == 0
-    eors    \ro, \ro, \a2
-    .else
-    eor     \ro, \ro, \a2, ROR #(32-(\rho_e2))%32
-    .endif
-    .endm
+    @ E0 (uses P3 at sp+4):
+    ldr     lr, [sp, #4]
+    eor     lr, lr, lr, ror #9
+    ror     lr, lr, #18
+    eor     r0, r0, lr
+    eor     r4, r4, lr
+    eor     r8, r8, lr
 
-.macro    mRliXor ro, ri, rot
-    .if ((\rot)%32) == 0
-    eors    \ro, \ro, \ri
-    .else
-    eor     \ro, \ro, \ri, ROR #(32-(\rot))%32
-    .endif
-    .endm
+    @ E1 (uses P0 at sp+8):
+    ldr     lr, [sp, #8]
+    eor     lr, lr, lr, ror #9
+    ror     lr, lr, #18
+    eor     r1, r1, lr
+    eor     r5, r5, lr
+    eor     r9, r9, lr
 
-.macro    mRloXor ro, ri, rot
-    .if ((\rot)%32) == 0
-    eors    \ro, \ro, \ri
-    .else
-    eor     \ro, \ri, \ro, ROR #(32-(\rot))%32
-    .endif
-    .endm
+    @ E2 (uses P1 at sp+12):
+    ldr     lr, [sp, #12]
+    eor     lr, lr, lr, ror #9
+    ror     lr, lr, #18
+    eor     r2, r2, lr
+    eor     r6, r6, lr
+    eor     r10, r10, lr
 
-.macro    mChi3   a0,a1,a2,r0,r1
-    bic     \r0, \a2, \a1, ROR #_w1
-    eors    \a0, \a0, \r0, ROR #32-_w1
-    bic     \r1, \a0, \a2, ROR #32-_w1
-    eors    \a1, \a1, \r1
-    bic     \r1, \a1, \a0
-    eors    \a2, \a2, \r1, ROR #_w1
-    .endm
+    @ E3 (uses P2 at sp+0):
+    ldr     lr, [sp, #0]
+    eor     lr, lr, lr, ror #9
+    ror     lr, lr, #18
+    eor     r3, r3, lr
+    eor     r7, r7, lr
+    eor     r11, r11, lr
 
-.macro    mRound  r6i, r7i, r8i, r9i, r6w, r7w, r8w, r9w, r10i, r11i, r12i, lri, rho_e1, rho_we2, rc
+    add     sp, sp, #16     @ Pop parities
 
-    @ Theta: Column Parity Mixer (with late Rho-west, Rho-east bit rotations)
-    mXor3   r0, r5, \r9i, \lri, \rho_e1, \rho_we2
-    mXor3   r1, r2, \r6i, \r10i, \rho_e1, \rho_we2
-    mRliXor r0, r0, _r1-_r0
-    mRloXor r2, r0, 32-_r0
-    mRloXor \r6i, r0, \rho_e1-_r0
-    mRloXor \r10i, r0, \rho_we2-_r0
+    @ -------------------------------------------------------------
+    @ Rho-west: Plane shift Row 1 & Rotate Row 2
+    @ -------------------------------------------------------------
+    mov     r12, r7
+    mov     r7, r6
+    mov     r6, r5
+    mov     r5, r4
+    mov     r4, r12
 
-    mXor3   r0, r3, \r7i, \r11i, \rho_e1, \rho_we2
-    mRliXor r1, r1, _r1-_r0
-    mRloXor r3, r1, 32-_r0
-    mRloXor \r7i, r1, \rho_e1-_r0
-    mRloXor \r11i, r1, \rho_we2-_r0
+    ror     r8, r8, #21
+    ror     r9, r9, #21
+    ror     r10, r10, #21
+    ror     r11, r11, #21
 
-    mXor3   r1, r4, \r8i, \r12i, \rho_e1, \rho_we2
-    mRliXor r0, r0, _r1-_r0
-    mRloXor r4, r0, 32-_r0
-    mRloXor \r8i, r0, \rho_e1-_r0
-    mRloXor \r12i, r0, \rho_we2-_r0
+    @ -------------------------------------------------------------
+    @ Iota: Round Constant
+    @ -------------------------------------------------------------
+    ldr     r12, [sp, #0]   @ r12 = RC pointer
+    ldr     lr, [r12], #4   @ lr = RC value, advance pointer by 4
+    str     r12, [sp, #0]   @ save RC pointer back
+    eor     r0, r0, lr
 
-    mRliXor r1, r1, _r1-_r0
-    mRloXor r5, r1, 32-_r0
-    mRloXor \r9i, r1, \rho_e1-_r0
-    mRloXor \lri, r1, \rho_we2-_r0
-    @ After Theta the whole state is rotated -r0
-    @ from here we must use a1.w instead of a1.i
+    @ -------------------------------------------------------------
+    @ Chi: Non-linear step
+    @ -------------------------------------------------------------
+    bic     r12, r8, r4
+    eor     r0, r0, r12
+    bic     r12, r0, r8
+    eor     r4, r4, r12
+    bic     r12, r4, r0
+    eor     r8, r8, r12
 
-    @ Iota: round constant
-    .if      \rc == 0xc0000002
-    eor     r2, r2, #0x00000002
-    eor     r2, r2, #0xc0000000
-    .else
-    eor     r2, r2, #\rc
-    .endif
+    bic     r12, r9, r5
+    eor     r1, r1, r12
+    bic     r12, r1, r9
+    eor     r5, r5, r12
+    bic     r12, r5, r1
+    eor     r9, r9, r12
 
-    @ Chi: non linear step, on colums
-    mChi3   r2, \r6w, \r10i, r0, r1
-    mChi3   r3, \r7w, \r11i, r0, r1
-    mChi3   r4, \r8w, \r12i, r0, r1
-    mChi3   r5, \r9w, \lri, r0, r1
-    .endm
+    bic     r12, r10, r6
+    eor     r2, r2, r12
+    bic     r12, r2, r10
+    eor     r6, r6, r12
+    bic     r12, r6, r2
+    eor     r10, r10, r12
+
+    bic     r12, r11, r7
+    eor     r3, r3, r12
+    bic     r12, r3, r11
+    eor     r7, r7, r12
+    bic     r12, r7, r3
+    eor     r11, r11, r12
+
+    @ -------------------------------------------------------------
+    @ Rho-east: Plane shift Row 1 & Rotate/Shift Row 2
+    @ -------------------------------------------------------------
+    ror     r4, r4, #31
+    ror     r5, r5, #31
+    ror     r6, r6, #31
+    ror     r7, r7, #31
+
+    ror     r12, r8, #24
+    ror     lr, r9, #24
+    ror     r8, r10, #24
+    ror     r9, r11, #24
+    mov     r10, r12
+    mov     r11, lr
+
+    @ -------------------------------------------------------------
+    @ Loop control
+    @ -------------------------------------------------------------
+    ldr     lr, [sp, #0]     @ lr = current RC pointer
+    adr     r12, .L_RC_end
+    cmp     lr, r12
+    blo     .L_round_loop
+
+    @ Write state back and return
+    ldr     r12, [sp, #4]    @ r12 = state pointer
+    stm     r12, {r0-r11}
+    add     sp, sp, #8       @ Pop RC pointer and state pointer
+    pop     {r4-r11, pc}
 
 .global Xoodoo_Permute_6rounds
-.type	Xoodoo_Permute_6rounds, %function;
+.type   Xoodoo_Permute_6rounds, %function
 Xoodoo_Permute_6rounds:
-    push    {r0,r4-r11,lr}
-    ldmia   r0!, {r2-r5}
-    ldmia   r0!, {r8-r9}
-    ldmia   r0!, {r6-r7}
-    ldmia   r0, {r10-r12,lr}
-    mRound  r8, r9, r6, r7,    r7, r8, r9, r6,    r10, r11, r12, lr,   32,      32, _rc6x1
-    mRound  r7, r8, r9, r6,    r6, r7, r8, r9,    r12, lr, r10, r11,    1, _e1+_w1, _rc5x2
-    mRound  r6, r7, r8, r9,    r9, r6, r7, r8,    r10, r11, r12, lr,    1, _e1+_w1, _rc4x3
-    mRound  r9, r6, r7, r8,    r8, r9, r6, r7,    r12, lr, r10, r11,    1, _e1+_w1, _rc3x4
-    mRound  r8, r9, r6, r7,    r7, r8, r9, r6,    r10, r11, r12, lr,    1, _e1+_w1, _rc2x5
-    mRound  r7, r8, r9, r6,    r6, r7, r8, r9,    r12, lr, r10, r11,    1, _e1+_w1, _rc1x6
-    pop     {r0,r1}
-    ror     r2, r2, #32-(6*_r0)%32
-    ror     r3, r3, #32-(6*_r0)%32
-    ror     r4, r4, #32-(6*_r0)%32
-    ror     r5, r5, #32-(6*_r0)%32
-    ror     r6, r6, #32-(6*_r0+1)%32
-    ror     r7, r7, #32-(6*_r0+1)%32
-    ror     r8, r8, #32-(6*_r0+1)%32
-    ror     r9, r9, #32-(6*_r0+1)%32
-    ror     r10, r10, #32-(6*_r0+_e1+_w1)%32
-    ror     r11, r11, #32-(6*_r0+_e1+_w1)%32
-    ror     r12, r12, #32-(6*_r0+_e1+_w1)%32
-    ror     lr, lr, #32-(6*_r0+_e1+_w1)%32
-    stmia   r0, {r2-r12,lr}
-    mov     r4, r1
-    pop     {r5-r11,pc}
-    .align  4
+    movs    r1, #6
+    b       Xoodoo_Permute_Nrounds
 
 .global Xoodoo_Permute_12rounds
-.type	Xoodoo_Permute_12rounds, %function;
+.type   Xoodoo_Permute_12rounds, %function
 Xoodoo_Permute_12rounds:
-    push    {r0,r4-r11,lr}
-    ldmia   r0, {r2-r12,lr}
-    mRound  r6, r7, r8, r9,    r9, r6, r7, r8,    r10, r11, r12, lr,   32,      32, _rc12x1
-    mRound  r9, r6, r7, r8,    r8, r9, r6, r7,    r12, lr, r10, r11,    1, _e1+_w1, _rc11x2
-    mRound  r8, r9, r6, r7,    r7, r8, r9, r6,    r10, r11, r12, lr,    1, _e1+_w1, _rc10x3
-    mRound  r7, r8, r9, r6,    r6, r7, r8, r9,    r12, lr, r10, r11,    1, _e1+_w1, _rc9x4
-    mRound  r6, r7, r8, r9,    r9, r6, r7, r8,    r10, r11, r12, lr,    1, _e1+_w1, _rc8x5
-    mRound  r9, r6, r7, r8,    r8, r9, r6, r7,    r12, lr, r10, r11,    1, _e1+_w1, _rc7x6
-    mRound  r8, r9, r6, r7,    r7, r8, r9, r6,    r10, r11, r12, lr,    1, _e1+_w1, _rc6x7
-    mRound  r7, r8, r9, r6,    r6, r7, r8, r9,    r12, lr, r10, r11,    1, _e1+_w1, _rc5x8
-    mRound  r6, r7, r8, r9,    r9, r6, r7, r8,    r10, r11, r12, lr,    1, _e1+_w1, _rc4x9
-    mRound  r9, r6, r7, r8,    r8, r9, r6, r7,    r12, lr, r10, r11,    1, _e1+_w1, _rc3x10
-    mRound  r8, r9, r6, r7,    r7, r8, r9, r6,    r10, r11, r12, lr,    1, _e1+_w1, _rc2x11
-    mRound  r7, r8, r9, r6,    r6, r7, r8, r9,    r12, lr, r10, r11,    1, _e1+_w1, _rc1x12
-    ror     r2, r2, #32-(12*_r0)%32
-    ror     r3, r3, #32-(12*_r0)%32
-    ror     r4, r4, #32-(12*_r0)%32
-    ror     r5, r5, #32-(12*_r0)%32
-    ror     r6, r6, #32-(12*_r0+1)%32
-    ror     r7, r7, #32-(12*_r0+1)%32
-    ror     r8, r8, #32-(12*_r0+1)%32
-    ror     r9, r9, #32-(12*_r0+1)%32
-    ror     r10, r10, #32-(12*_r0+_e1+_w1)%32
-    ror     r11, r11, #32-(12*_r0+_e1+_w1)%32
-    ror     r12, r12, #32-(12*_r0+_e1+_w1)%32
-    ror     lr, lr, #32-(12*_r0+_e1+_w1)%32
-    pop     {r0,r1}
-    stmia   r0, {r2-r12,lr}
-    mov     r4, r1
-    pop     {r5-r11,pc}
-    .align  4
+    movs    r1, #12
+    b       Xoodoo_Permute_Nrounds
