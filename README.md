@@ -2,7 +2,7 @@
 
 A portable, lightweight, and zero-allocation C library implementing the **Xoodyak** cryptographic scheme (based on the Cyclist construction and the **Xoodoo** permutation). 
 
-This library is designed specifically for resource-constrained embedded systems and microcontrollers (e.g., ESP8266, ARM Cortex-M, AVR).
+This library is designed specifically for resource-constrained embedded systems and microcontrollers (e.g., ESP8266, ARM Cortex-M).
 
 ## Features
 - **Zero Allocations:** No heap usage (`malloc`/`free`); all state structure memory is allocated by the caller.
@@ -21,11 +21,10 @@ embedded-xoodyak/
 └── src/
     ├── Xoodyak.c          # Portable C implementation of Xoodyak cyclist layer
     ├── Xoodoo-portable.c  # Portable plain C fallback implementation of Xoodoo
-    ├── Xoodoo-lx106.c     # Helper C functions for ESP8266
+    ├── Xoodoo-helpers.c   # Helper C functions (state manipulation) for optimized targets
     ├── Xoodoo-lx106.S     # Optimized Xtensa LX106 assembly permutation (ESP8266)
     ├── Xoodoo-armv6m.S    # Optimized ARMv6-M assembly permutation (Cortex-M0/M0+)
-    ├── Xoodoo-armv7m.S    # Optimized ARMv7-M assembly permutation (Cortex-M3/M4/M7)
-    └── Xoodoo-avr8.S      # Optimized AVR8 assembly permutation (Atmel AVR)
+    └── Xoodoo-armv7m.S    # Optimized ARMv7-M assembly permutation (Cortex-M3/M4/M7)
 ```
 
 ---
@@ -42,23 +41,21 @@ Compile the following files:
 ### 2. Xtensa LX106 (ESP8266 / NodeMCU)
 Compile the following files (using your `xtensa-lx106-elf-*` toolchain):
 * `src/Xoodyak.c`
-* `src/Xoodoo-lx106.c`
+* `src/Xoodoo-helpers.c`
 * `src/Xoodoo-lx106.S`
 
 ### 3. ARM Cortex-M0 / Cortex-M0+ (ARMv6-M)
 Compile the following files:
 * `src/Xoodyak.c`
+* `src/Xoodoo-helpers.c`
 * `src/Xoodoo-armv6m.S`
 
 ### 4. ARM Cortex-M3 / M4 / M7 (ARMv7-M)
 Compile the following files:
 * `src/Xoodyak.c`
+* `src/Xoodoo-helpers.c`
 * `src/Xoodoo-armv7m.S`
 
-### 5. AVR8 (e.g., ATmega328P / Arduino Uno)
-Compile the following files:
-* `src/Xoodyak.c`
-* `src/Xoodoo-avr8.S`
 
 ---
 
