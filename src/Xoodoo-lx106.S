@@ -1,7 +1,3 @@
-#include "config.h"
-
-#ifdef XKCP_has_Xoodoo
-
     .text
     .literal_position
     .align  4
@@ -28,9 +24,9 @@
     .word   .L_RC + 48
 
     .align  4
-.global Xoodoo_plain_Permute_Nrounds
-.type   Xoodoo_plain_Permute_Nrounds, @function
-Xoodoo_plain_Permute_Nrounds:
+.global Xoodoo_Permute_Nrounds
+.type   Xoodoo_Permute_Nrounds, @function
+Xoodoo_Permute_Nrounds:
     # Entry: a2 = state pointer, a3 = nr (number of rounds)
     # Stack layout (64 bytes):
     # sp + 0..28  : callee-saved registers (a8-a15)
@@ -275,17 +271,15 @@ Xoodoo_plain_Permute_Nrounds:
     ret.n
 
     .align  4
-.global Xoodoo_plain_Permute_6rounds
-.type   Xoodoo_plain_Permute_6rounds, @function
-Xoodoo_plain_Permute_6rounds:
+.global Xoodoo_Permute_6rounds
+.type   Xoodoo_Permute_6rounds, @function
+Xoodoo_Permute_6rounds:
     movi    a3, 6
-    j       Xoodoo_plain_Permute_Nrounds
+    j       Xoodoo_Permute_Nrounds
 
     .align  4
-.global Xoodoo_plain_Permute_12rounds
-.type   Xoodoo_plain_Permute_12rounds, @function
-Xoodoo_plain_Permute_12rounds:
+.global Xoodoo_Permute_12rounds
+.type   Xoodoo_Permute_12rounds, @function
+Xoodoo_Permute_12rounds:
     movi    a3, 12
-    j       Xoodoo_plain_Permute_Nrounds
-
-#endif
+    j       Xoodoo_Permute_Nrounds
