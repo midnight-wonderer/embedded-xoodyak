@@ -4,29 +4,6 @@ A portable, lightweight, and zero-allocation C library implementing the **Xoodya
 
 This library is designed specifically for resource-constrained embedded systems and microcontrollers (e.g., ESP8266, ARM Cortex-M).
 
-## Features
-- **Zero Allocations:** No heap usage (`malloc`/`free`); all state structure memory is allocated by the caller.
-- **No dependencies:** Standard-library independent (no `libc` required, only `stdint.h` and `stddef.h`).
-- **Target-Specific Optimizations:** Highly optimized assembly implementations for key microcontroller architectures, along with a fallback portable C implementation.
-
----
-
-## Directory Structure
-
-```
-embedded-xoodyak/
-├── include/
-│   ├── Xoodoo.h           # Public API for Xoodoo permutation layer
-│   └── Xoodyak.h          # Public API for Xoodyak cyclist layer
-└── src/
-    ├── Xoodyak.c          # Portable C implementation of Xoodyak cyclist layer
-    ├── Xoodoo-portable.c  # Portable plain C fallback implementation of Xoodoo
-    ├── Xoodoo-helpers.c   # Helper C functions (state manipulation) for optimized targets
-    ├── Xoodoo-lx106.S     # Optimized Xtensa LX106 assembly permutation (ESP8266)
-    ├── Xoodoo-armv6m.S    # Optimized ARMv6-M assembly permutation (Cortex-M0/M0+)
-    └── Xoodoo-armv7m.S    # Optimized ARMv7-M assembly permutation (Cortex-M3/M4/M7)
-```
-
 ---
 
 ## How to Build / Integrate
@@ -112,3 +89,8 @@ void encrypt_example(void) {
     Xoodyak_Squeeze(&instance, tag, sizeof(tag));
 }
 ```
+
+## License
+This project is dedicated to the public domain under the Creative Commons CC0 1.0 Universal Public Domain Dedication, matching the licensing of the underlying XKCP source components. See the `LICENSE.md` file for details.
+
+
