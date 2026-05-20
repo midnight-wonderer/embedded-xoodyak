@@ -1,0 +1,19 @@
+{
+  "name": "embedded-xoodyak",
+  "version": "1.0.0",
+  "description": "Portable, lightweight, and zero-allocation C library implementing the Xoodyak cryptographic scheme (optimized for ESP8266 and ARM Cortex-M).",
+  "keywords": "cryptography, xoodyak, xoodoo, embedded, aead, hashing, esp8266, cortex-m",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/midnight-wonderer/embedded-xoodyak.git"
+  },
+  "authors": [
+    {
+      "name": "Midnight Wonderer",
+      "maintainer": true
+    }
+  ],
+  "license": "CC0-1.0",
+  "frameworks": "*",
+  "platforms": "*"
+}
