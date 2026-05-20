@@ -1,2 +1,2 @@
-*.o
-*.lst
+/.xmake
+/build
